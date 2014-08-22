@@ -1,0 +1,120 @@
+---
+title: "Random Forest Approach Based Personal Activiy Recognition"
+author: "By Qingcheng"
+date: "Saturday, August 23, 2014"
+output:
+  html_document:
+    keep_md: yes
+---
+
+#### Couresra-[Practical Machine Learning][predmachlearn-004][Course Project 1]
+
+# A. Synopsis
+In this analysis document, we will apply **Random Forest Classification** algorithm to predict **personal activiy**. The data collected from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, which can be download:
+
+> * [Training data][1].
+> * [Test data][2].
+
+The data for this project come from [Human Activity Recognition][3]. Besides of this website, more information can also be obtained in the paper [Qualitative Activity Recognition of Weight Lifting Exercises][4].
+
+
+# B. Model Fitting
+
+### B.1. Locale and environment
+
+```{r}
+Sys.setlocale('LC_ALL', 'English')
+sessionInfo()
+```
+
+### B.2. Download and read the dataset
+```{r cache=TRUE}
+urlTrain<-"http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+filenameTrain = "pml-training.csv"
+urlTest <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+filenameTest = "pml-testing.csv"
+
+download.file(urlTrain, destfile=filenameTrain)
+download.file(urlTest, destfile=filenameTest)
+dateDownloaded <- date()
+dateDownloaded
+```
+
+
+### B.3. Read the training and test dataset
+```{r cache=TRUE}
+Traindata <- read.csv(filenameTrain)
+Testdata <- read.csv(filenameTest)
+```
+
+### B.4 Clean the dataset
+Since there are many NAs in some columns of `Traindata` and `Testdata`, we first clearning these columns.
+```{r cache=TRUE}
+NAs <- apply(Traindata, 2, function(x) {sum(is.na(x))})
+cleanTrain <- Traindata[, which(NAs == 0)]
+cleanTest <- Testdata[, which(NAs == 0)]
+```
+
+### B.5. Subset the dataset
+After reading the feature extraction in the paper [Qualitative Activity Recognition of Weight Lifting Exercises][4], we keep 16 variables below as predictors and apply **Random Forest Classification** algorithm to predict **personal activiy**.
+```{r cache=TRUE}
+# names(cleanTrain)
+input_vars_list <- c("roll_belt", "pitch_belt", "yaw_belt", "total_accel_belt", 
+                     "roll_arm", "pitch_arm", "yaw_arm", "total_accel_arm", 
+                     "roll_dumbbell", "pitch_dumbbell", "yaw_dumbbell", 
+                     "total_accel_dumbbell", "roll_forearm", "pitch_forearm", 
+                     "yaw_forearm", "total_accel_forearm", "classe");
+cleanTrain <- cleanTrain[, input_vars_list]
+cleanTest <- cleanTest[, input_vars_list[1:16]]
+```
+
+### B.6. Split the origin train dataset into training & cross-validation dataset 
+To evaluate the performance of fitted model, we split 40% of origin train data as cross-validation dataset and use the rest to fit model.
+```{r cache=TRUE}
+set.seed(1)
+library(caret)
+inTrain <- createDataPartition(y=cleanTrain$classe,
+                               p=0.7, list=FALSE)
+training <- cleanTrain[inTrain,]
+validation <- cleanTrain[-inTrain,]
+```
+
+### B.7. Fit Random Forest Classification Model
+```{r cache=TRUE}
+set.seed(2)
+startTime <- Sys.time();
+rfControl <- trainControl(method ="cv", number=5)
+modelFit <- train(classe ~.,data=training, method="rf",
+                  trControl = rfControl)
+endTime <- Sys.time();
+endTime - startTime;
+
+modelFit
+
+predTrain <- predict(modelFit, training)
+table(predTrain,training$classe)
+```
+
+# C. Results
+
+### C.1. The Error Rate of the Validation Set.
+```{r cache=TRUE}
+predVali <- predict(modelFit, validation)
+table(predVali,validation$classe)
+sampleError <- sum(predVali == validation$classe)/nrow(validation)
+sampleError
+```
+Therefore, the out of sample error estimated with cross-validation is **`r sampleError`**.
+
+### C.2. The Prediction of the Test Set.
+```{r}
+answers <- predict(modelFit, cleanTest)
+answers
+```
+
+
+[1]:https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+[2]:https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+[3]:http://groupware.les.inf.puc-rio.br/har
+[4]:http://groupware.les.inf.puc-rio.br/public/papers/2013.Velloso.QAR-WLE.pdf
+
