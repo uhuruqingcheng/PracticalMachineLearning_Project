@@ -1,4 +1,4 @@
-PracticalMachineLearning_Project1
+PracticalMachineLearning_Project
 =================================
 
-Project 1 for the class Practical Machine Learning in Coursera. 
+Project for the class Practical Machine Learning in Coursera. 
