@@ -45,7 +45,7 @@ cleanTrain <- Traindata[, which(NAs == 0)]
 cleanTest <- Testdata[, which(NAs == 0)]
 
 # Subset the data set
-names(cleanTrain)
+# names(cleanTrain)
 input_vars_list <- c("roll_belt", "pitch_belt", "yaw_belt", "total_accel_belt", 
                      "roll_arm", "pitch_arm", "yaw_arm", "total_accel_arm", 
                      "roll_dumbbell", "pitch_dumbbell", "yaw_dumbbell", 
@@ -63,7 +63,7 @@ inTrain <- createDataPartition(y=cleanTrain$classe,
 training <- cleanTrain[inTrain,]
 validation <- cleanTrain[-inTrain,]
 
-print(object.size(training), units = "MB")
+# print(object.size(training), units = "MB")
 
 # Fit model
 set.seed(2)
@@ -80,7 +80,6 @@ predTrain <- predict(modelFit, training)
 table(predTrain,training$classe)
 
 
-
 # Calculation the errors using the Validation Set.
 predVali <- predict(modelFit, validation)
 table(predVali,validation$classe)
@@ -89,4 +88,14 @@ sampleError
 
 answers <- predict(modelFit, cleanTest)
 
+# Submission
+pml_write_files = function(x){
+    n = length(x)
+    for(i in 1:n){
+        filename = paste0("problem_id_",i,".txt")
+        write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+    }
+}
+
+pml_write_files(answers)
 
